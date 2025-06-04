@@ -17,12 +17,10 @@ let nodes = [
     { id: 10, lat: 5.519279, lng: -73.358486, name: "ESE SANTIAGO DE TUNJA", fixed: true }
 ];
 
-// Agrega marcadores iniciales (puedes dejar el icono azul o quitarlo)
 nodes.forEach(node => {
     markers[node.id] = L.marker([node.lat, node.lng]).addTo(map).bindPopup(node.name);
 });
 
-// Sidebar dinámico para hospitales fijos
 window.onload = function () {
     nodes.forEach(node => {
         if (node.fixed) {
@@ -169,9 +167,8 @@ class PriorityQueue {
     }
 }
 
-// --- Manejo de múltiples accidentes y límite por hospital ---
-let accidents = []; // {id, lat, lng, marker, routingTo, routingFrom, assignedNodeId}
-let accidentCountPerNode = {}; // { nodeId: cantidad }
+let accidents = [];
+let accidentCountPerNode = {};
 let accidentIdCounter = 1;
 
 function canAssignAccidentToNode(nodeId) {
@@ -179,10 +176,8 @@ function canAssignAccidentToNode(nodeId) {
 }
 
 map.on('contextmenu', function (e) {
-    // Crear nodo accidente temporal
     let accidentNode = { id: 'accident', lat: e.latlng.lat, lng: e.latlng.lng, name: "Accidente" };
 
-    // Calcular hospitales ordenados por distancia (solo fijos y activos)
     let hospitalsByDistance = nodes
         .filter(node => node.fixed && markers[node.id])
         .map(node => ({
@@ -191,7 +186,6 @@ map.on('contextmenu', function (e) {
         }))
         .sort((a, b) => a.dist - b.dist);
 
-    // Buscar el hospital más cercano disponible
     let closestNode = null;
     for (let h of hospitalsByDistance) {
         if (canAssignAccidentToNode(h.node.id)) {
@@ -200,13 +194,11 @@ map.on('contextmenu', function (e) {
         }
     }
 
-    // Si no hay hospitales disponibles
     if (!closestNode) {
         alert("Todos los hospitales ya tienen 5 accidentes asignados.");
         return;
     }
 
-    // Si el hospital elegido llega a 5 accidentes, cambia el color del botón a negro
     if ((accidentCountPerNode[closestNode.id] || 0) === 4) {
         const btn = document.getElementById(`btn-${closestNode.id}`);
         if (btn) {
@@ -215,7 +207,6 @@ map.on('contextmenu', function (e) {
         }
     }
 
-    // Crear marcador de accidente
     let thisAccidentId = accidentIdCounter++;
     let marker = L.marker([accidentNode.lat, accidentNode.lng]).addTo(map)
         .bindPopup(
@@ -223,7 +214,6 @@ map.on('contextmenu', function (e) {
             `<br><button onclick="removeAccidentById(${thisAccidentId})">Eliminar</button>`
         ).openPopup();
 
-    // Ruta hospital -> accidente
     let waypointsToAccident = [
         L.latLng(closestNode.lat, closestNode.lng),
         L.latLng(accidentNode.lat, accidentNode.lng)
@@ -247,7 +237,6 @@ map.on('contextmenu', function (e) {
         }
     }).addTo(map);
 
-    // Ruta accidente -> hospital (camino de regreso)
     let edges = [];
     nodes.forEach(node => {
         let weight = calculateDistance(accidentNode.lat, accidentNode.lng, node.lat, node.lng);
@@ -282,18 +271,17 @@ map.on('contextmenu', function (e) {
         fitSelectedRoutes: false,
         createMarker: function (i, waypoint, n) {
             if (i === 0) {
-                return L.marker(waypoint.latLng).bindPopup(`
-                    <div>
+                return L.marker(waypoint.latLng).bindPopup(
+                    `<div>
                         <p>${accidentNode.name}</p>
                         <button onclick="removeAccidentById(${thisAccidentId})">Eliminar</button>
-                    </div>
-                `);
+                    </div>`
+                );
             }
             return L.marker(waypoint.latLng).bindPopup(nodes.find(node => node.lat == waypoint.latLng.lat && node.lng == waypoint.latLng.lng).name);
         }
     }).addTo(map);
 
-    // Guardar accidente
     accidents.push({
         id: thisAccidentId,
         lat: accidentNode.lat,
@@ -304,30 +292,30 @@ map.on('contextmenu', function (e) {
         assignedNodeId: closestNode.id
     });
 
-    // Actualizar conteo
     accidentCountPerNode[closestNode.id] = (accidentCountPerNode[closestNode.id] || 0) + 1;
-});
 
-// Eliminar accidente por ID
-// ...existing code...
+    const accidentTime = new Date().toLocaleTimeString();
+    const li = document.createElement('li');
+    li.id = 'accident-li-' + thisAccidentId;
+    li.textContent = `Accidente (${accidentTime})`;
+    li.onclick = function () { highlightAccident(thisAccidentId); };
+    document.getElementById('accidentList').appendChild(li);
+});
 
 window.removeAccidentById = function (accidentId) {
     let idx = accidents.findIndex(a => a.id === accidentId);
     if (idx === -1) return;
     let accident = accidents[idx];
 
-    // Eliminar marcador y rutas
     if (accident.marker) map.removeLayer(accident.marker);
     if (accident.routingTo) map.removeControl(accident.routingTo);
     if (accident.routingFrom) map.removeControl(accident.routingFrom);
 
-    // Actualizar conteo
     if (accident.assignedNodeId) {
         accidentCountPerNode[accident.assignedNodeId]--;
-        // Si el hospital tenía 5 y ahora tiene menos, restaurar color azul al botón SOLO si el hospital sigue activo
         if (
             accidentCountPerNode[accident.assignedNodeId] === 4 &&
-            markers[accident.assignedNodeId] // Solo si el hospital sigue activo
+            markers[accident.assignedNodeId]
         ) {
             const btn = document.getElementById(`btn-${accident.assignedNodeId}`);
             if (btn) {
@@ -337,11 +325,12 @@ window.removeAccidentById = function (accidentId) {
         }
     }
 
-    // Quitar del array
+    const li = document.getElementById('accident-li-' + accident.id);
+    if (li) li.remove();
+
     accidents.splice(idx, 1);
 };
 
-// Recalcular rutas de todos los accidentes (si se elimina/agrega hospital)
 function recalculateAllAccidentRoutes() {
     accidents.forEach(accident => {
         if (accident.marker) map.removeLayer(accident.marker);
@@ -352,12 +341,11 @@ function recalculateAllAccidentRoutes() {
     accidents = [];
     accidentCountPerNode = {};
     accidentIdCounter = 1;
+    document.getElementById('accidentList').innerHTML = '';
     accidentData.forEach(data => {
         map.fire('contextmenu', { latlng: L.latLng(data.lat, data.lng) });
     });
 }
-
-// --- FIN manejo de accidentes ---
 
 let addingHospital = false;
 
@@ -385,7 +373,6 @@ map.on('click', function (e) {
         let marker = L.marker([lat, lng]).addTo(map).bindPopup(name);
         markers[newId] = marker;
 
-        // Botón solo para eliminar
         const btn = document.createElement('button');
         btn.className = 'sidebar-button';
         btn.id = `btn-${newId}`;
@@ -403,4 +390,26 @@ function resetAddHospitalBtn() {
     btn.innerText = "Agregar Centro de Salud";
     btn.disabled = false;
     btn.style.background = "#28a745";
+}
+
+function highlightAccident(accidentId) {
+    accidents.forEach(accident => {
+        if (accident.marker) {
+            if (accident.id === accidentId) {
+                accident.marker.setIcon(new L.Icon.Default({ className: 'leaflet-marker-icon leaflet-marker-highlight' }));
+                accident.marker.openPopup();
+                map.setView([accident.lat, accident.lng], 16);
+            } else {
+                accident.marker.setIcon(new L.Icon.Default());
+            }
+        }
+        const li = document.getElementById('accident-li-' + accident.id);
+        if (li) {
+            if (accident.id === accidentId) {
+                li.classList.add('selected');
+            } else {
+                li.classList.remove('selected');
+            }
+        }
+    });
 }

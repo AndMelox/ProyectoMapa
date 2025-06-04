@@ -1,6 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
-
+<html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -9,47 +8,15 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.js"></script>
     <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.css" />
-    <style>
-        #container {
-            display: flex;
-        }
-        #map {
-            height: 900px;
-            flex-grow: 1;
-        }
-        #sidebar {
-            width: 200px;
-            background-color: #E9F1FA; 
-            display: flex;
-            flex-direction: column;
-            padding: 10px;
-            border: 1px solid black; 
-        }
-        .sidebar-button {
-            margin: 5px 0;
-            padding: 10px;
-            background-color: #007bff;
-            color: white;
-            border: none;
-            cursor: pointer;
-        }
-        .sidebar-button:hover {
-            background-color: #0056b3;
-        }
-        .sidebar-title {
-            font-size: 18px;
-            font-weight: bold;
-            margin-bottom: 10px;
-        }
-    </style>
+    <link rel="stylesheet" href="style.css" />
 </head>
-
 <body>
     <div id="container">
         <div id="map"></div>
         <div id="sidebar">
-            <div class="sidebar-title">Disponibilidad de Hospitales</div>
-            <button id="addHospitalBtn" style="width:100%;background:#28a745;color:white;margin-bottom:10px;">
+            <div class="sidebar-title">Historial de Accidentes</div>
+            <ul id="accidentList"></ul>
+            <button id="addHospitalBtn">
                 Agregar Centro de Salud
             </button>
             <button class="sidebar-button" id="btn-1" onclick="toggleNode(1)">Clínica Los Andes</button>
@@ -66,5 +33,4 @@
     </div>
     <script src="mapa.js"></script>
 </body>
-
 </html>
