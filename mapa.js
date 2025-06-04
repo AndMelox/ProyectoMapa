@@ -35,6 +35,14 @@ window.onload = function () {
 function removeNode(nodeId) {
     const node = nodes.find(n => n.id === nodeId);
     if (node && node.fixed) {
+        const hospitalesActivos = nodes.filter(n => n.fixed && markers[n.id] && n.id !== nodeId);
+        const hospitalesDisponibles = hospitalesActivos.filter(h => (accidentCountPerNode[h.id] || 0) < 5);
+
+        if (hospitalesDisponibles.length === 0) {
+            alert("No puedes eliminar este centro porque todos los hospitales restantes están al máximo de capacidad.");
+            return;
+        }
+
         if (markers[nodeId]) {
             map.removeLayer(markers[nodeId]);
             delete markers[nodeId];
@@ -73,10 +81,6 @@ function toggleNode(nodeId) {
             addNode(nodeId);
         }
     }
-}
-
-function getNodeById(nodeId) {
-    return nodes.find(n => n.id === nodeId);
 }
 
 function calculateDistance(lat1, lng1, lat2, lng2) {
@@ -138,7 +142,6 @@ class PriorityQueue {
     constructor() {
         this.collection = [];
     }
-
     enqueue(element, priority) {
         let newNode = { element, priority };
         if (this.isEmpty()) {
@@ -157,11 +160,9 @@ class PriorityQueue {
             }
         }
     }
-
     dequeue() {
         return this.collection.shift();
     }
-
     isEmpty() {
         return this.collection.length === 0;
     }
@@ -177,8 +178,6 @@ function canAssignAccidentToNode(nodeId) {
 
 map.on('contextmenu', function (e) {
     let accidentNode = { id: 'accident', lat: e.latlng.lat, lng: e.latlng.lng, name: "Accidente" };
-
-    // Ahora hospitales disponibles son TODOS los que tengan marcador (fijos o agregados)
     let hospitalsByDistance = nodes
         .filter(node => markers[node.id])
         .map(node => ({
