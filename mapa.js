@@ -178,8 +178,9 @@ function canAssignAccidentToNode(nodeId) {
 map.on('contextmenu', function (e) {
     let accidentNode = { id: 'accident', lat: e.latlng.lat, lng: e.latlng.lng, name: "Accidente" };
 
+    // Ahora hospitales disponibles son TODOS los que tengan marcador (fijos o agregados)
     let hospitalsByDistance = nodes
-        .filter(node => node.fixed && markers[node.id])
+        .filter(node => markers[node.id])
         .map(node => ({
             node,
             dist: calculateDistance(accidentNode.lat, accidentNode.lng, node.lat, node.lng)
@@ -195,7 +196,7 @@ map.on('contextmenu', function (e) {
     }
 
     if (!closestNode) {
-        alert("Todos los hospitales ya tienen 5 accidentes asignados.");
+        alert("Se necesitan más hospitales por la cantidad de accidentes.");
         return;
     }
 
