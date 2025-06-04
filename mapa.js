@@ -17,7 +17,7 @@ let nodes = [
     { id: 10, lat: 5.519279, lng: -73.358486, name: "ESE SANTIAGO DE TUNJA", fixed: true }
 ];
 
-// Agrega marcadores iniciales
+// Agrega marcadores iniciales (puedes dejar el icono azul o quitarlo)
 nodes.forEach(node => {
     markers[node.id] = L.marker([node.lat, node.lng]).addTo(map).bindPopup(node.name);
 });
@@ -206,19 +206,12 @@ map.on('contextmenu', function (e) {
         return;
     }
 
-    // Si el hospital elegido llega a 5 accidentes, cambia su marcador a negro
+    // Si el hospital elegido llega a 5 accidentes, cambia el color del botón a negro
     if ((accidentCountPerNode[closestNode.id] || 0) === 4) {
-        if (markers[closestNode.id]) {
-            markers[closestNode.id].setIcon(
-                new L.Icon({
-                    iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-black.png',
-                    shadowUrl: 'https://unpkg.com/leaflet@1.9.3/dist/images/marker-shadow.png',
-                    iconSize: [25, 41],
-                    iconAnchor: [12, 41],
-                    popupAnchor: [1, -34],
-                    shadowSize: [41, 41]
-                })
-            );
+        const btn = document.getElementById(`btn-${closestNode.id}`);
+        if (btn) {
+            btn.style.backgroundColor = 'black';
+            btn.style.color = 'white';
         }
     }
 
@@ -255,7 +248,6 @@ map.on('contextmenu', function (e) {
     }).addTo(map);
 
     // Ruta accidente -> hospital (camino de regreso)
-    // Recalcula edges y path para la ruta de regreso
     let edges = [];
     nodes.forEach(node => {
         let weight = calculateDistance(accidentNode.lat, accidentNode.lng, node.lat, node.lng);
@@ -317,6 +309,8 @@ map.on('contextmenu', function (e) {
 });
 
 // Eliminar accidente por ID
+// ...existing code...
+
 window.removeAccidentById = function (accidentId) {
     let idx = accidents.findIndex(a => a.id === accidentId);
     if (idx === -1) return;
@@ -330,18 +324,16 @@ window.removeAccidentById = function (accidentId) {
     // Actualizar conteo
     if (accident.assignedNodeId) {
         accidentCountPerNode[accident.assignedNodeId]--;
-        // Si el hospital tenía 5 y ahora tiene menos, restaurar icono azul
-        if (accidentCountPerNode[accident.assignedNodeId] === 4 && markers[accident.assignedNodeId]) {
-            markers[accident.assignedNodeId].setIcon(
-                new L.Icon({
-                    iconUrl: 'https://unpkg.com/leaflet@1.9.3/dist/images/marker-icon.png',
-                    shadowUrl: 'https://unpkg.com/leaflet@1.9.3/dist/images/marker-shadow.png',
-                    iconSize: [25, 41],
-                    iconAnchor: [12, 41],
-                    popupAnchor: [1, -34],
-                    shadowSize: [41, 41]
-                })
-            );
+        // Si el hospital tenía 5 y ahora tiene menos, restaurar color azul al botón SOLO si el hospital sigue activo
+        if (
+            accidentCountPerNode[accident.assignedNodeId] === 4 &&
+            markers[accident.assignedNodeId] // Solo si el hospital sigue activo
+        ) {
+            const btn = document.getElementById(`btn-${accident.assignedNodeId}`);
+            if (btn) {
+                btn.style.backgroundColor = '#007bff';
+                btn.style.color = 'white';
+            }
         }
     }
 
